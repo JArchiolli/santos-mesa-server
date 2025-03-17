@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id       Int        @id @default(autoincrement())
+  name     String
+  url_img  String
+  aboutUs String
+  category Category[]
+  location Location[]
+  rating   Rating[]
+}
+
+model Location {
+  id      Int    @id @default(autoincrement())
+  address String
+  city    String
+  number  String
+  state   String
+
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  email    String
+  password String
+  role     String
+  comments Comment[]
+  rating   Rating[]
+}
+
+
+
+model Rating {
+  id           Int        @id @default(autoincrement())
+  value        Int
+  comments     Comment[]
+  restaurantId Int        @unique
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id])
+}
+
+model Comment {
+  id Int @id @default(autoincrement())
+  rating Rating @relation(onDelete: NoAction, onUpdate: NoAction, fields: [ratingId], references: [id])
+  message   String
+  comments  Comment[] @relation(name: "comments")
+  commentId Int?
+  comment   Comment?  @relation(onDelete: NoAction, onUpdate: NoAction, name: "comments", fields: [commentId], references: [id])
+  userId    Int?
+  ratingId  Int
+  User      User?     @relation(fields: [userId], references: [id])
+}
