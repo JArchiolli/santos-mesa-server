@@ -1,1 +1,20 @@
-export class CreateRatingDto {}
+import { IsInt, IsNotEmpty, IsOptional, IsArray, ArrayNotEmpty, IsString } from 'class-validator';
+
+export class CreateRatingDto {
+  @IsInt()
+  @IsNotEmpty()
+  value: number;
+
+  @IsInt()
+  @IsNotEmpty()
+  restaurantId: number;
+
+  @IsInt()
+  @IsNotEmpty()
+  userId: number;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  comments?: { text: string }[];
+}
