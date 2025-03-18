@@ -29,11 +29,10 @@ model Location {
 }
 
 model Category {
-  id   Int    @id @default(autoincrement())
-  name String
-
-  restaurantId Int
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  id           Int        @id @default(autoincrement())
+  name         String
+  restaurantId Int?  
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
 }
 
 model User {
