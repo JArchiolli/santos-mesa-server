@@ -9,21 +9,18 @@ export class CategoryService {
 
 
   create(createCategoryDto: CreateCategoryDto) {
-    const { name, restaurant } = createCategoryDto;
-  
     return this.prisma.category.create({
       data: {
-        name,
-        ...(restaurant && { restaurant }) 
+        name: createCategoryDto.name,
+        ...(createCategoryDto.restaurant ? { restaurant: createCategoryDto.restaurant } : {})
       },
       select: {
         id: true,
         name: true,
         restaurant: true
       }
-    });
+    })
   }
-  
 
   findAll() {
     return this.prisma.category.findMany();
