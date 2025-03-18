@@ -11,13 +11,11 @@ export class CategoryService {
   create(createCategoryDto: CreateCategoryDto) {
     return this.prisma.category.create({
       data: {
-        name: createCategoryDto.name,
-        restaurant: createCategoryDto.restaurant
+        name: createCategoryDto.name
       },
       select: {
         id: true,
         name: true,
-        restaurant: true
       }
     })
   }
