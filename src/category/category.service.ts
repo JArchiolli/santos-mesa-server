@@ -12,7 +12,7 @@ export class CategoryService {
     return this.prisma.category.create({
       data: {
         name: createCategoryDto.name,
-        ...(createCategoryDto.restaurant ? { restaurant: createCategoryDto.restaurant } : {})
+        restaurant: createCategoryDto.restaurant || undefined,
       },
       select: {
         id: true,
