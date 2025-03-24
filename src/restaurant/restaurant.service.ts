@@ -13,8 +13,8 @@ export class RestaurantService {
         name: createRestaurantDto.name,
         aboutUs: createRestaurantDto.aboutUs,
         url_img: createRestaurantDto.url_img,
-        category: createRestaurantDto.category,
-        location: createRestaurantDto.location,
+        categoryId: createRestaurantDto.categoryId,
+        locationId: createRestaurantDto.locationId,
         rating: createRestaurantDto.rating
       },
       select: {
@@ -30,17 +30,45 @@ export class RestaurantService {
   }
 
   findAll() {
-    return this.prisma.restaurant.findMany();
+    return this.prisma.restaurant.findMany({
+      include: {
+        category: true,
+        location: true,
+        rating: true,
+      },
+    });
   }
 
   findOne(id: number) {
-    return this.prisma.restaurant.findFirst({ where: { id } })
+    return this.prisma.restaurant.findFirst({
+      where: { id },
+      include: {
+        category: true,
+        location: true,
+        rating: true,
+      }
+    })
   }
 
   update(id: number, updateRestaurantDto: UpdateRestaurantDto) {
     return this.prisma.restaurant.update({
       where: { id },
-      data: updateRestaurantDto,
+      data: {
+        name: updateRestaurantDto.name,
+        url_img: updateRestaurantDto.url_img,
+        aboutUs: updateRestaurantDto.aboutUs,
+        category: {
+          connect: {
+            id: updateRestaurantDto.categoryId
+          },
+        },
+        location: {
+          connect: {
+            id: updateRestaurantDto.locationId
+          },
+        },
+        rating: updateRestaurantDto.rating,
+      },
     });
   }
 

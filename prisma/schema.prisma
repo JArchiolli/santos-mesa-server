@@ -6,33 +6,31 @@ datasource db {
   provider = "sqlserver"
   url      = env("DATABASE_URL")
 }
-
 model Restaurant {
-  id       Int        @id @default(autoincrement())
-  name     String
-  url_img  String
-  aboutUs String
-  category Category[]
-  location Location[]
-  rating   Rating[]
-}
-
-model Location {
-  id      Int    @id @default(autoincrement())
-  address String
-  city    String
-  number  String
-  state   String
-
-  restaurantId Int?
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  id         Int        @id @default(autoincrement())
+  name       String
+  url_img    String
+  aboutUs    String
+  categoryId Int?
+  category   Category?  @relation(fields: [categoryId], references: [id])
+  locationId   Int?
+  location   Location?  @relation(fields: [locationId], references: [id])
+  rating     Rating[]
 }
 
 model Category {
-  id           Int        @id @default(autoincrement())
-  name         String
-  restaurantId Int?  
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  id         Int         @id @default(autoincrement())
+  name       String
+  restaurant Restaurant[]
+}
+
+model Location {
+  id          Int      @id @default(autoincrement())
+  address     String
+  city        String
+  number      String
+  state       String
+  restaurant Restaurant[]
 }
 
 model User {
@@ -44,13 +42,11 @@ model User {
   rating   Rating[]
 }
 
-
-
 model Rating {
   id           Int        @id @default(autoincrement())
   value        Int
-  comments     Comment[]
-  restaurantId Int?        @unique
+  comments     Comment[]  
+  restaurantId Int?        
   restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
   userId       Int?
   user         User?       @relation(fields: [userId], references: [id])

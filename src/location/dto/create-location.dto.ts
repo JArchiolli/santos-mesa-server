@@ -4,7 +4,6 @@ export class CreateLocationDto {
     city: string
     number: string
     state: string;
-    restaurantId: number;
 }
 
 
