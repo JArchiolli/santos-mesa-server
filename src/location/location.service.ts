@@ -15,8 +15,11 @@ export class LocationService {
         number: createLocationDto.number,
         state: createLocationDto.state,
       },
-      select: {
-        restaurant: true
+      select:{
+        address: true,
+        city: true,
+        number: true, 
+        state: true
       }
     })
   }

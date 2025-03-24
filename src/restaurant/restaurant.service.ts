@@ -13,8 +13,16 @@ export class RestaurantService {
         name: createRestaurantDto.name,
         aboutUs: createRestaurantDto.aboutUs,
         url_img: createRestaurantDto.url_img,
-        categoryId: createRestaurantDto.categoryId,
-        locationId: createRestaurantDto.locationId,
+        category: {
+          connect: {
+            id: createRestaurantDto.categoryId
+          },
+        },
+        location: {
+          connect: {
+            id: createRestaurantDto.locationId
+          },
+        },
         rating: createRestaurantDto.rating
       },
       select: {
