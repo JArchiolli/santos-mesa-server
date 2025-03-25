@@ -33,10 +33,11 @@ export class UserService {
       data: {
         email: createUserDto.email,
         password: hashedPassword,
-        role: createUserDto.role ?? 'user'
+        role: createUserDto.role ?? 'user',
+        profilePicture: createUserDto.profilePicture
       },
-      select: { id: true, email: true, role: true },
-    });
+      select: { id: true, email: true, role: true, profilePicture: true},
+    }); 
   }
 
   async findByEmail(email: string) {
