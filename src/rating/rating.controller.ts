@@ -17,6 +17,7 @@ export class RatingController {
     return this.ratingService.findAll();
   }
 
+  
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.ratingService.findOne(+id);

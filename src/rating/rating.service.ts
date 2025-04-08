@@ -5,32 +5,22 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class RatingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createRatingDto: CreateRatingDto) {
-    const { value, restaurantId, userId, comments } = createRatingDto;
+    const { value, restaurantId, userId } = createRatingDto;
 
     try {
       const rating = await this.prisma.rating.create({
         data: {
           value,
           restaurant: {
-            connect: { id: restaurantId }, 
+            connect: { id: restaurantId },
           },
           user: {
-            connect: { id: userId },  
+            connect: { id: userId },
           },
-          comments: comments
-            ? {
-                create: comments.map(comment => ({
-                  message: comment.text, 
-                })),
-              }
-            : undefined,
-        },
-        include: {
-          comments: true, 
-        },
+        }
       });
 
       return rating;
@@ -40,19 +30,12 @@ export class RatingService {
   }
 
   async findAll() {
-    return this.prisma.rating.findMany({
-      include: {
-        comments: true,  
-      },
-    });
+    return this.prisma.rating.findMany();
   }
 
   async findOne(id: number) {
     const rating = await this.prisma.rating.findUnique({
       where: { id },
-      include: {
-        comments: true, 
-      },
     });
 
     if (!rating) {
@@ -63,7 +46,7 @@ export class RatingService {
   }
 
   async update(id: number, updateRatingDto: UpdateRatingDto) {
-    const { value, restaurantId, userId, comments } = updateRatingDto;
+    const { value, restaurantId, userId } = updateRatingDto;
 
     const rating = await this.prisma.rating.findUnique({
       where: { id },
@@ -79,22 +62,12 @@ export class RatingService {
         data: {
           value,
           restaurant: {
-            connect: { id: restaurantId },  
+            connect: { id: restaurantId },
           },
           user: {
-            connect: { id: userId },  
-          },
-          comments: comments
-            ? {
-                create: comments.map(comment => ({
-                  message: comment.text, 
-                })),
-              }
-            : undefined,
-        },
-        include: {
-          comments: true,  
-        },
+            connect: { id: userId },
+          }
+        }
       });
 
       return updatedRating;
@@ -118,7 +91,7 @@ export class RatingService {
       });
       return { message: `Rating with id ${id} successfully removed` };
     } catch (error) {
-      throw new Error(`Failed to remove rating: ${error }`);
+      throw new Error(`Failed to remove rating: ${error}`);
     }
   }
 }

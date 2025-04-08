@@ -6,7 +6,6 @@ import { RestaurantModule } from './restaurant/restaurant.module';
 import { CategoryModule } from './category/category.module';
 import { LocationModule } from './location/location.module';
 import { JwtModule } from '@nestjs/jwt';
-import { CommentModule } from './comment/comment.module';
 import { RatingModule } from './rating/rating.module';
 
 @Module({
@@ -19,7 +18,6 @@ import { RatingModule } from './rating/rating.module';
     CategoryModule,
     LocationModule, 
     CategoryModule,
-    CommentModule, 
     RatingModule
   ],
 })

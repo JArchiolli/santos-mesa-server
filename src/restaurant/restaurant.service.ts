@@ -5,9 +5,28 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { DefaultAzureCredential } from '@azure/identity';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { v1 } from 'uuid';
+import { getByCategories } from './dto/payloads.dto';
+
+
 
 @Injectable()
 export class RestaurantService {
+
+  
+  private calculateAverageRatings(restaurants) {
+    return restaurants.map(({ rating, ...rest }) => {
+      const averageRating =
+        rating.length > 0
+          ? rating.reduce((acc, r) => acc + r.value, 0) / rating.length
+          : 0;
+  
+      return {
+        ...rest,
+        averageRating,
+      };
+    });
+  }
+
   constructor(private prisma: PrismaService) { }
 
   async create(createRestaurantDto: CreateRestaurantDto, file) {
@@ -60,20 +79,98 @@ export class RestaurantService {
         aboutUs: true,
         name: true,
         category: true,
-        rating: true
       }
     })
   }
 
-  findAll() {
-    return this.prisma.restaurant.findMany({
+  async findRestaurantsByCategories(categoryIds: getByCategories) {
+    if (!categoryIds || categoryIds.categoryId.length === 0) {
+      const restaurants = await this.prisma.restaurant.findMany({
+        include: {
+          category: true,
+          location: true,
+          rating: true,
+        },
+      });
+  
+      return this.calculateAverageRatings(restaurants);
+    }
+  
+    const restaurants = await this.prisma.restaurant.findMany({
+      where: {
+        categoryId: {
+          in: categoryIds.categoryId,
+        },
+      },
       include: {
         category: true,
         location: true,
         rating: true,
       },
     });
+  
+    return this.calculateAverageRatings(restaurants);
   }
+  
+
+
+
+  async findAll() {
+    const restaurants = await this.prisma.restaurant.findMany({
+      include: {
+        category: true,
+        location: true,
+        rating: true,
+      },
+    });
+
+    return this.calculateAverageRatings(restaurants)
+  }
+
+  async findAverageRatingsByRestaurants() {
+    const restaurants = await this.prisma.restaurant.findMany({
+      include: {
+        category: true,
+        location: true,
+        rating: true,
+      },
+    });
+
+    return this.calculateAverageRatings(restaurants)
+
+  }
+
+
+
+  async findAverageRatingsByRestaurant(id: number) {
+    const restaurant = await this.prisma.restaurant.findFirst({
+      where: { id },
+      include: {
+        category: true,
+        location: true,
+        rating: true,
+      },
+    });
+
+    if (!restaurant) {
+      return null;
+    }
+
+    const { rating, ...rest } = restaurant;
+    const averageRating =
+      rating.length > 0
+        ? rating.reduce((acc, r) => acc + r.value, 0) / rating.length
+        : 0;
+
+    return {
+      ...rest,
+      averageRating,
+    };
+  }
+
+
+
+
 
   findOne(id: number) {
     return this.prisma.restaurant.findFirst({
@@ -85,6 +182,8 @@ export class RestaurantService {
       }
     })
   }
+
+
 
   update(id: number, updateRestaurantDto: UpdateRestaurantDto) {
     return this.prisma.restaurant.update({

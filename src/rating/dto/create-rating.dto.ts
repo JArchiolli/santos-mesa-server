@@ -14,7 +14,5 @@ export class CreateRatingDto {
   userId: number;
 
   @IsOptional()
-  @IsArray()
-  @ArrayNotEmpty()
-  comments?: { text: string }[];
+  comments?: { text: string };
 }
