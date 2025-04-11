@@ -19,15 +19,63 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    return this.prisma.user.update({
-      where: { id },
-      data: updateUserDto,
-    });
+    async remove(id: number) {
+    return this.prisma.user.delete({ where: { id } });
   }
 
-  async remove(id: number) {
-    return this.prisma.user.delete({ where: { id } });
+  async update(id: number, updateUserDto: UpdateUserDto, file?: Express.Multer.File) {
+    let blobUrl: string | undefined;
+    
+    if (file) {
+      const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
+      if (!accountName) throw Error('Azure Storage accountName not found');
+      
+      const BlobService = new BlobServiceClient(
+        `https://${accountName}.blob.core.windows.net`,
+        new DefaultAzureCredential()
+      );
+  
+      const containerClient = BlobService.getContainerClient("santosmesacontainer");
+      containerClient.setAccessPolicy('blob');
+      
+      try {
+        await containerClient.createIfNotExists();
+      } catch (error) {
+        throw new Error("Erro ao verificar/criar o container.");
+      }
+  
+      const blobName = 'photo' + v1() + '.png';
+      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+  
+      await blockBlobClient.upload(file.buffer, file.size);
+      blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer/${blobName}`;
+    }
+  
+    const data: any = {
+      email: updateUserDto.email,
+      role: updateUserDto.role,
+      userName: updateUserDto.userName
+    };
+  
+    if (updateUserDto.password) {
+      data.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+  
+    if (blobUrl) {
+      data.profilePicture = blobUrl;
+    }
+  
+    return this.prisma.user.update({
+      where: { id },
+      data,
+      select: { 
+        id: true, 
+        email: true, 
+        role: true, 
+        profilePicture: true, 
+        userName: true 
+      },
+    });
   }
 
   async create(createUserDto: CreateUserDto,
