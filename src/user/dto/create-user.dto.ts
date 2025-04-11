@@ -3,4 +3,5 @@ export class CreateUserDto {
   password: string;
   role: string;
   profilePicture?: string;  
+  userName?: string;
 }

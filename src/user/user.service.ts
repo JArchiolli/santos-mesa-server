@@ -62,9 +62,10 @@ export class UserService {
         email: createUserDto.email,
         password: hashedPassword,
         role: createUserDto.role ?? 'user',
-        profilePicture: blobUrl
+        profilePicture: blobUrl,
+        userName: createUserDto.userName
       },
-      select: { id: true, email: true, role: true, profilePicture: true },
+      select: { id: true, email: true, role: true, profilePicture: true, userName: true },
     });
   }
 

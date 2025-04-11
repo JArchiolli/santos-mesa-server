@@ -41,6 +41,7 @@ model User {
   role           String
   profilePicture String?
   rating         Rating[]
+  userName       String?
 }
 
 model Rating {

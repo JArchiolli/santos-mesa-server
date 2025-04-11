@@ -25,12 +25,14 @@ export class AuthService {
       email: user.email,
       sub: user.id,
       role: user.role,
-      profilePicture: user.profilePicture
+      profilePicture: user.profilePicture,
+      userName: user.userName
     };
     return {
       access_token: this.jwtService.sign(payload),
       userId: user.id,
-      profilePicture: user.profilePicture
+      profilePicture: user.profilePicture,
+      userName: user.userName
     };
   }
 }

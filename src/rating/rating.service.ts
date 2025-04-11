@@ -94,4 +94,27 @@ export class RatingService {
       throw new Error(`Failed to remove rating: ${error}`);
     }
   }
+  async findAllByUserId(userId:number){
+    const ratings = await this.prisma.rating.findMany({
+      where: {userId},
+      include:{
+        restaurant:{
+          select:{
+            name: true
+          }
+        },
+        user: {
+          select: {
+            userName: true
+          }
+        }
+      }
+    })
+
+    if(!ratings || ratings.length===0){
+      throw new NotFoundException(`Not found for user ${userId}`)
+    }
+    return ratings
+  }
+
 }
