@@ -10,7 +10,7 @@ async function bootstrap() {
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 
-  await app.listen(3030);
+  await app.listen(process.env.PORT || 8080);
   console.log('[New Santos Mesa] Server running - port 3030');
 }
 bootstrap();
