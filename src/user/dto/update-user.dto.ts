@@ -16,4 +16,8 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   userName?: string;
+
+  @IsString()
+  @IsOptional()
+  exibitionName?: string;
 }

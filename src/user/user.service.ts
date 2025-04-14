@@ -54,7 +54,8 @@ export class UserService {
     const data: any = {
       email: updateUserDto.email,
       role: updateUserDto.role,
-      userName: updateUserDto.userName
+      userName: updateUserDto.userName,
+      exibitionName: updateUserDto.exibitionName
     };
   
     if (updateUserDto.password) {
@@ -73,7 +74,8 @@ export class UserService {
         email: true, 
         role: true, 
         profilePicture: true, 
-        userName: true 
+        userName: true ,
+        exibitionName: true
       },
     });
   }
@@ -111,9 +113,10 @@ export class UserService {
         password: hashedPassword,
         role: createUserDto.role ?? 'user',
         profilePicture: blobUrl,
-        userName: createUserDto.userName
+        userName: createUserDto.userName,
+        exibitionName: createUserDto.exibitionName
       },
-      select: { id: true, email: true, role: true, profilePicture: true, userName: true },
+      select: { id: true, email: true, role: true, profilePicture: true, userName: true, exibitionName: true },
     });
   }
 
