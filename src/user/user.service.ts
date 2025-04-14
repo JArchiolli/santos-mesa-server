@@ -19,108 +19,116 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-    async remove(id: number) {
+  async remove(id: number) {
     return this.prisma.user.delete({ where: { id } });
   }
 
   async update(id: number, updateUserDto: UpdateUserDto, file?: Express.Multer.File) {
     let blobUrl: string | undefined;
-    
+
     if (file) {
       const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
       if (!accountName) throw Error('Azure Storage accountName not found');
-      
+
       const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
       if (!connectionString) throw Error('Azure Storage connection string not found');
       const BlobService = BlobServiceClient.fromConnectionString(connectionString);
-  
+
       const containerClient = BlobService.getContainerClient("santosmesacontainer");
       containerClient.setAccessPolicy('blob');
-      
+
       try {
         await containerClient.createIfNotExists();
       } catch (error) {
         throw new Error("Erro ao verificar/criar o container.");
       }
-  
+
       const blobName = 'photo' + v1() + '.png';
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-  
+
       await blockBlobClient.upload(file.buffer, file.size);
       blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer/${blobName}`;
     }
-  
+
     const data: any = {
       email: updateUserDto.email,
       role: updateUserDto.role,
       userName: updateUserDto.userName,
       exibitionName: updateUserDto.exibitionName
     };
-  
+
     if (updateUserDto.password) {
       data.password = await bcrypt.hash(updateUserDto.password, 10);
     }
-  
+
     if (blobUrl) {
       data.profilePicture = blobUrl;
     }
-  
+
     return this.prisma.user.update({
       where: { id },
       data,
-      select: { 
-        id: true, 
-        email: true, 
-        role: true, 
-        profilePicture: true, 
-        userName: true ,
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        profilePicture: true,
+        userName: true,
         exibitionName: true
       },
     });
   }
 
-  async create(createUserDto: CreateUserDto,
-    file: Express.Multer.File) {
+  async create(createUserDto: CreateUserDto, file?: Express.Multer.File) {
     const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
     if (!accountName) throw Error('Azure Storage accountName not found');
 
-
     const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
     if (!connectionString) throw Error('Azure Storage connection string not found');
+
     const BlobService = BlobServiceClient.fromConnectionString(connectionString);
-
-
     const containerClient = BlobService.getContainerClient("santosmesacontainer");
     containerClient.setAccessPolicy('blob');
+
     try {
       await containerClient.createIfNotExists();
     } catch (error) {
       throw new Error("Erro ao verificar/criar o container.");
     }
 
-    const blobName = 'photo' + v1() + '.png';
-    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+    let blobUrl: string | undefined;
 
-    const uploadBlobResponse = await blockBlobClient.upload(file.buffer, file.size);
+    if (file) {
+      const blobName = 'photo' + v1() + '.png';
+      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-    console.log('Upload Status:', uploadBlobResponse._response.status);
+      const uploadBlobResponse = await blockBlobClient.upload(file.buffer, file.size);
+      console.log('Upload Status:', uploadBlobResponse._response.status);
 
-    const blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer/${blobName}`;
+      blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer/${blobName}`;
+    }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
     return this.prisma.user.create({
       data: {
         email: createUserDto.email,
         password: hashedPassword,
         role: createUserDto.role ?? 'user',
-        profilePicture: blobUrl,
+        profilePicture: blobUrl, 
         userName: createUserDto.userName,
         exibitionName: createUserDto.exibitionName
       },
-      select: { id: true, email: true, role: true, profilePicture: true, userName: true, exibitionName: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        profilePicture: true,
+        userName: true,
+        exibitionName: true
+      },
     });
   }
-
   async findByEmail(email: string) {
     return this.prisma.user.findFirst({ where: { email } });
   }

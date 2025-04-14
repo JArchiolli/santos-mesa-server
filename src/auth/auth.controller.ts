@@ -15,7 +15,7 @@ export class AuthController {
   @Post('register')
   @UseInterceptors(FileInterceptor('profilePicture'))
   create(@Body() createUserDto: CreateUserDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file?: Express.Multer.File
   ) {
     return this.userService.create(createUserDto, file);
   }
