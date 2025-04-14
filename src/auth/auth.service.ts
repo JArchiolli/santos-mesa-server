@@ -49,7 +49,8 @@ export class AuthService {
       userId: user.id,
       profilePicture: user.profilePicture,
       userName: user.userName,
-      exibitionName: user.exibitionName
+      exibitionName: user.exibitionName,
+      email: user.email
     };
   }
 }
