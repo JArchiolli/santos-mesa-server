@@ -31,7 +31,8 @@ jobs:
       - name: Prepare for deployment
         run: |
           mkdir -p deployment
-          cp -r dist package.json package-lock.json .env.production deployment/
+          cp -r dist package.json package-lock.json deployment/
+          [ -f .env.production ] && cp .env.production deployment/ || true
           cd deployment && zip -r ../release.zip ./*
 
       - name: Upload artifact
@@ -62,9 +63,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_DE6A0EA8FEA147F5B676E6346C341933 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_32371F979C95479F92B171C9BDA8AEE5 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4529181DCB2C4DECA901A16F5A6C3B89 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
