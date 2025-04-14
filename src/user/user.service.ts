@@ -30,10 +30,9 @@ export class UserService {
       const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
       if (!accountName) throw Error('Azure Storage accountName not found');
       
-      const BlobService = new BlobServiceClient(
-        `https://${accountName}.blob.core.windows.net`,
-        new DefaultAzureCredential()
-      );
+      const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+      if (!connectionString) throw Error('Azure Storage connection string not found');
+      const BlobService = BlobServiceClient.fromConnectionString(connectionString);
   
       const containerClient = BlobService.getContainerClient("santosmesacontainer");
       containerClient.setAccessPolicy('blob');
@@ -84,10 +83,12 @@ export class UserService {
     file: Express.Multer.File) {
     const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
     if (!accountName) throw Error('Azure Storage accountName not found');
-    const BlobService = new BlobServiceClient(
-      `https://${accountName}.blob.core.windows.net`,
-      new DefaultAzureCredential()
-    );
+
+
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (!connectionString) throw Error('Azure Storage connection string not found');
+    const BlobService = BlobServiceClient.fromConnectionString(connectionString);
+
 
     const containerClient = BlobService.getContainerClient("santosmesacontainer");
     containerClient.setAccessPolicy('blob');
