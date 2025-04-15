@@ -14,5 +14,6 @@ export class CreateRatingDto {
   userId: number;
 
   @IsOptional()
-  comments?: { text: string };
+  @IsString()
+  comments?: string;
 }

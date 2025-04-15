@@ -8,7 +8,7 @@ export class RatingService {
   constructor(private readonly prisma: PrismaService) { }
 
   async create(createRatingDto: CreateRatingDto) {
-    const { value, restaurantId, userId } = createRatingDto;
+    const { value, restaurantId, userId, comments } = createRatingDto;
 
     try {
       const rating = await this.prisma.rating.create({
@@ -20,6 +20,7 @@ export class RatingService {
           user: {
             connect: { id: userId },
           },
+          comments: comments
         }
       });
 
@@ -46,7 +47,7 @@ export class RatingService {
   }
 
   async update(id: number, updateRatingDto: UpdateRatingDto) {
-    const { value, restaurantId, userId } = updateRatingDto;
+    const { value, restaurantId, userId, comments } = updateRatingDto;
 
     const rating = await this.prisma.rating.findUnique({
       where: { id },
@@ -66,7 +67,8 @@ export class RatingService {
           },
           user: {
             connect: { id: userId },
-          }
+          },
+          comments: comments
         }
       });
 
