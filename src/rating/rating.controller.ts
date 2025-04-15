@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, NotFoundException } from '@nestjs/common';
 import { RatingService } from './rating.service';
 import { CreateRatingDto } from './dto/create-rating.dto';
 import { UpdateRatingDto } from './dto/update-rating.dto';
@@ -37,5 +37,17 @@ export class RatingController {
   @Get('user/:userId')
   findAllByUserId(@Param('userId', ParseIntPipe) userId: number) {
     return this.ratingService.findAllByUserId(userId);
+  }
+
+  @Get('/restaurant/:id')
+  async findAllByRestaurantId(@Param('id') restaurantId: string) {
+    try {
+      return await this.ratingService.findAllByRestaurantId(parseInt(restaurantId));
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new NotFoundException(error);
+    }
   }
 }

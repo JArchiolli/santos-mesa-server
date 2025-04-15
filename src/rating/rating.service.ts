@@ -119,4 +119,27 @@ export class RatingService {
     return ratings
   }
 
+  async findAllByRestaurantId(restaurantId: number) {
+    const ratings = await this.prisma.rating.findMany({
+      where: { restaurantId },
+      include: {
+        restaurant: {
+          select: {
+            name: true
+          }
+        },
+        user: {
+          select: {
+            userName: true
+          }
+        }
+      }
+    });
+  
+    if (!ratings || ratings.length === 0) {
+      throw new NotFoundException(`No ratings found for restaurant with id ${restaurantId}`);
+    }
+  
+    return ratings;
+  }
 }
