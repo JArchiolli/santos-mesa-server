@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,6 +24,20 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto, file?: Express.Multer.File) {
+    if (updateUserDto.email) {
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          email: updateUserDto.email,
+          NOT: { id }
+        }
+      })
+
+      if (existingUser) {
+        throw new ConflictException("Email já cadastrado!")
+      }
+    }
+
+
     let blobUrl: string | undefined;
 
     if (file) {
@@ -80,6 +94,15 @@ export class UserService {
   }
 
   async create(createUserDto: CreateUserDto, file?: Express.Multer.File) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: createUserDto.email }
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Este email já está em uso');
+    }
+
+
     const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
     if (!accountName) throw Error('Azure Storage accountName not found');
 
@@ -115,7 +138,7 @@ export class UserService {
         email: createUserDto.email,
         password: hashedPassword,
         role: createUserDto.role ?? 'user',
-        profilePicture: blobUrl, 
+        profilePicture: blobUrl,
         userName: createUserDto.userName,
         exibitionName: createUserDto.exibitionName
       },
