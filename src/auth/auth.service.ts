@@ -50,7 +50,8 @@ export class AuthService {
       profilePicture: user.profilePicture,
       userName: user.userName,
       exibitionName: user.exibitionName,
-      email: user.email
+      email: user.email,
+      role : user.role
     };
   }
 }
