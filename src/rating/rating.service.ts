@@ -130,7 +130,9 @@ export class RatingService {
         },
         user: {
           select: {
-            userName: true
+            userName: true,
+            exibitionName: true,
+            profilePicture: true
           }
         }
       }
