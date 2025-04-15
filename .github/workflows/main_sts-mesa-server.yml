@@ -7,8 +7,9 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '22.x'
+  NODE_VERSION: '20.x' # Alterado para LTS (recomendado para NestJS)
   PRISMA_VERSION: '6.5.0'
+  AZURE_RUNTIME_STACK: 'NODE|20-lts' # Atualizado para corresponder à versão do Node
 
 jobs:
   build:
@@ -26,8 +27,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Clean install dependencies
+        run: |
+          npm ci
+          # Remover @nestjs/cli das dependências regulares se existir
+          npm uninstall @nestjs/cli
 
       - name: Install Prisma CLI
         run: npm install -g prisma@${{ env.PRISMA_VERSION }}
@@ -36,15 +40,30 @@ jobs:
         run: npx prisma generate
 
       - name: Build application
-        run: npm run build
+        run: |
+          npm run build
+          # Garantir que a estrutura dist/ está completa
+          ls -la dist/
+
+      - name: Run tests
+        run: npm test
 
       - name: Prepare deployment package
         run: |
           mkdir -p deployment
-          # Copiar arquivos necessários
+          # Copiar apenas o necessário para produção
           cp -r dist node_modules package.json package-lock.json prisma deployment/
-          # Copiar .env se existir
-          [ -f .env.production ] && cp .env.production deployment/ || true
+          # Garantir que .env.production seja incluído
+          if [ -f .env.production ]; then
+            cp .env.production deployment/.env
+            echo "Arquivo .env.production incluído no deploy"
+          else
+            echo "AVISO: .env.production não encontrado"
+          fi
+          # Criar arquivo de startup personalizado
+          echo "#!/bin/bash" > deployment/startup.sh
+          echo "npm run start:prod" >> deployment/startup.sh
+          chmod +x deployment/startup.sh
           # Compactar para deploy
           cd deployment && zip -r ../release.zip ./*
 
@@ -87,12 +106,15 @@ jobs:
           app-name: 'sts-mesa-server'
           slot-name: 'Production'
           package: deployment
-          runtime-stack: 'NODE|22-lts'
+          runtime-stack: ${{ env.AZURE_RUNTIME_STACK }}
           app-settings: |
             [
               {"name": "WEBSITES_PORT", "value": "8080"},
               {"name": "NODE_ENV", "value": "production"},
               {"name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "false"},
               {"name": "DATABASE_URL", "value": "${{ secrets.DATABASE_URL }}"},
-              {"name": "PRISMA_HIDE_UPDATE_MESSAGE", "value": "1"}
+              {"name": "PRISMA_HIDE_UPDATE_MESSAGE", "value": "1"},
+              {"name": "STARTUP_COMMAND", "value": "npm run start:prod"},
+              {"name": "WEBSITE_NODE_DEFAULT_VERSION", "value": "~20"},
+              {"name": "NPM_CONFIG_PRODUCTION", "value": "true"}
             ]
