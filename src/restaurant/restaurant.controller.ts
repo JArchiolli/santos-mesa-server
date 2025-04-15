@@ -15,7 +15,7 @@ export class RestaurantController {
   @UseInterceptors(FileInterceptor('url_img'))
   async create(
     @Body() createRestaurantDto: CreateRestaurantDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file?: Express.Multer.File
   ) {
     return this.restaurantService.create(createRestaurantDto, file);
   }

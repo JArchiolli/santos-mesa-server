@@ -30,30 +30,31 @@ export class RestaurantService {
   constructor(private prisma: PrismaService) { }
 
   async create(createRestaurantDto: CreateRestaurantDto, file) {
-
+  
     const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
     if (!accountName) throw Error('Azure Storage accountName not found');
-    const BlobService = new BlobServiceClient(
-      `https://${accountName}.blob.core.windows.net`,
-      new DefaultAzureCredential()
-    );
 
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (!connectionString) throw Error('Azure Storage connection string not found');
+
+    const BlobService = BlobServiceClient.fromConnectionString(connectionString);
     const containerClient = BlobService.getContainerClient("santosmesacontainer");
     containerClient.setAccessPolicy('blob');
+
     try {
       await containerClient.createIfNotExists();
     } catch (error) {
       throw new Error("Erro ao verificar/criar o container.");
     }
 
-    const blobName = 'photo' + v1() + '.png';
-    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-    const uploadBlobResponse = await blockBlobClient.upload(file.buffer, file.size);
+      const blobName = 'photo' + v1() + '.png';
+      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-    console.log('Upload Status:', uploadBlobResponse._response.status);
+      const uploadBlobResponse = await blockBlobClient.upload(file.buffer, file.size);
+      console.log('Upload Status:', uploadBlobResponse._response.status);
 
-    const blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer/${blobName}`;
+      const blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer/${blobName}`;
 
     return this.prisma.restaurant.create({
       data: {
