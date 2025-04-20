@@ -1,0 +1,40 @@
+import { Transform, Type } from "class-transformer";
+import { IsArray, IsNumber, IsOptional } from "class-validator";
+
+export class getByCategoriesDto {
+  @IsOptional()
+  @IsNumber({}, { each: true })
+  @Type(() => Number)
+  categoryId?: number | number[];
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  minRating?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  maxRating?: number;
+}
+
+
+export class FilterRestaurantRatingsDto {
+    @IsOptional()
+    @IsArray()
+    @IsNumber({}, { each: true })
+    @Transform(({ value }) => {
+        if (!value) return undefined;
+        
+        if (typeof value === 'string' && value.includes(',')) {
+            return value.split(',').map(v => parseInt(v.trim(), 10));
+        }
+        
+        if (Array.isArray(value)) {
+            return value.map(v => parseInt(v, 10));
+        }
+        
+        return [parseInt(value, 10)];
+    })
+    ratings?: number[];
+}

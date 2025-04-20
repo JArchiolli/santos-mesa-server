@@ -96,28 +96,41 @@ export class RatingService {
       throw new Error(`Failed to remove rating: ${error}`);
     }
   }
-  async findAllByUserId(userId:number){
-    const ratings = await this.prisma.rating.findMany({
-      where: {userId},
-      include:{
-        restaurant:{
-          select:{
-            name: true
-          }
-        },
-        user: {
-          select: {
-            userName: true
-          }
-        }
-      }
-    })
 
-    if(!ratings || ratings.length===0){
-      throw new NotFoundException(`Not found for user ${userId}`)
+  async findAllByUserId(userId: number, filters?: { ratings?: number[] }) {
+    const where: any = { userId };
+    
+    if (filters?.ratings !== undefined) {
+        where.value = { 
+            in: Array.isArray(filters.ratings) 
+                ? filters.ratings.map(r => Number(r)) 
+                : [Number(filters.ratings)]
+        };
     }
-    return ratings
-  }
+
+    const ratings = await this.prisma.rating.findMany({
+        where,
+        include: {
+            restaurant: {
+                select: {
+                    name: true
+                }
+            },
+            user: {
+                select: {
+                    userName: true
+                }
+            }
+        }
+    });
+
+    if (!ratings || ratings.length === 0) {
+        throw new NotFoundException(`No ratings found for user ${userId} with the specified filters`);
+    }
+    return ratings;
+}
+
+
 
   async findAllByRestaurantId(restaurantId: number) {
     const ratings = await this.prisma.rating.findMany({
@@ -137,11 +150,11 @@ export class RatingService {
         }
       }
     });
-  
+
     if (!ratings || ratings.length === 0) {
       throw new NotFoundException(`No ratings found for restaurant with id ${restaurantId}`);
     }
-  
+
     return ratings;
   }
 }

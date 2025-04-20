@@ -6,6 +6,7 @@ import { DefaultAzureCredential } from '@azure/identity';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { v1 } from 'uuid';
 import { getByCategories } from './dto/payloads.dto';
+import { getByCategoriesDto } from './dto/filter-restaurants.dto';
 
 
 
@@ -113,19 +114,45 @@ export class RestaurantService {
     return this.calculateAverageRatings(restaurants);
   }
   
-
-
-
-  async findAll() {
+  async findAll(
+    queryParams: getByCategoriesDto, 
+    minRating?: number, 
+    maxRating?: number
+  ) {
+    const categoryIds = queryParams.categoryId
+      ? Array.isArray(queryParams.categoryId)
+        ? queryParams.categoryId
+        : [queryParams.categoryId]
+      : [];
+  
     const restaurants = await this.prisma.restaurant.findMany({
+      where: {
+        ...(categoryIds.length > 0 && {
+          categoryId: {
+            in: categoryIds,
+          },
+        }),
+      },
       include: {
         category: true,
         location: true,
         rating: true,
       },
     });
-
-    return this.calculateAverageRatings(restaurants)
+  
+    const restaurantsWithAvg = this.calculateAverageRatings(restaurants);
+  
+    if (minRating !== undefined || maxRating !== undefined) {
+      return restaurantsWithAvg.filter(restaurant => {
+        const avg = restaurant.averageRating;
+        return (
+          (minRating === undefined || avg >= minRating) &&
+          (maxRating === undefined || avg <= maxRating)
+        );
+      });
+    }
+  
+    return restaurantsWithAvg;
   }
 
   async findAverageRatingsByRestaurants() {
@@ -171,19 +198,30 @@ export class RestaurantService {
 
 
 
-
-
-  findOne(id: number) {
-    return this.prisma.restaurant.findFirst({
-      where: { id },
-      include: {
-        category: true,
-        location: true,
-        rating: true,
-      }
-    })
+async findOne(id: number, filters?: { ratings?: number[] }) {
+  const ratingWhere: any = { restaurantId: id };
+  
+  if (filters?.ratings !== undefined) {
+      const numericRatings = Array.isArray(filters.ratings)
+          ? filters.ratings.map(r => Number(r))
+          : [Number(filters.ratings)];
+          
+      ratingWhere.value = { 
+          in: numericRatings.filter(r => !isNaN(r))
+      };
   }
 
+  return this.prisma.restaurant.findFirst({
+      where: { id },
+      include: {
+          category: true,
+          location: true,
+          rating: {
+              where: ratingWhere
+          },
+      }
+  });
+}
 
 
   update(id: number, updateRestaurantDto: UpdateRestaurantDto) {

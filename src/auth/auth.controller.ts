@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UploadedFile, UseInterceptors, Put, Param, ParseIntPipe, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, UploadedFile, UseInterceptors, Put, Param, ParseIntPipe, UnauthorizedException, Get, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
@@ -44,4 +44,25 @@ export class AuthController {
   ) {
     return this.userService.update(id, updateUserDto, file);
   }
+
+
+  
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    const user = await this.userService.findOne(+id); 
+
+    if (user?.role !== 'ADM') {
+      throw new UnauthorizedException('Apenas adms podem acessar essa rota');
+    }
+
+    return this.userService.findAll(); 
+  }
+
+  @Delete('delete/:userId')
+  delete(@Param('userId', ParseIntPipe) userId: number) {
+    return this.userService.remove(+userId);
+  }
+
+
+  
 }
