@@ -20,9 +20,11 @@ export class UserService {
   }
 
   async remove(id: number) {
-    return this.prisma.user.delete({ where: { id } });
+    return this.prisma.$transaction(async (prisma) => {
+      await prisma.rating.deleteMany({ where: { userId: id } });
+      return prisma.user.delete({ where: { id } });
+    });
   }
-
   async update(id: number, updateUserDto: UpdateUserDto, file?: Express.Multer.File) {
     if (updateUserDto.email) {
       const existingUser = await this.prisma.user.findFirst({
@@ -48,8 +50,8 @@ export class UserService {
       if (!connectionString) throw Error('Azure Storage connection string not found');
       const BlobService = BlobServiceClient.fromConnectionString(connectionString);
 
-      const containerClient = BlobService.getContainerClient("santosmesacontainer");
-      containerClient.setAccessPolicy('blob');
+      const containerClient = BlobService.getContainerClient("santosmesacontainer2");
+     // containerClient.setAccessPolicy('blob');
 
       try {
         await containerClient.createIfNotExists();
@@ -61,7 +63,7 @@ export class UserService {
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
       await blockBlobClient.upload(file.buffer, file.size);
-      blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer/${blobName}`;
+      blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer2/${blobName}`;
     }
 
     const data: any = {
@@ -110,8 +112,8 @@ export class UserService {
     if (!connectionString) throw Error('Azure Storage connection string not found');
 
     const BlobService = BlobServiceClient.fromConnectionString(connectionString);
-    const containerClient = BlobService.getContainerClient("santosmesacontainer");
-    containerClient.setAccessPolicy('blob');
+    const containerClient = BlobService.getContainerClient("santosmesacontainer2");
+    // containerClient.setAccessPolicy('blob');
 
     try {
       await containerClient.createIfNotExists();
@@ -128,7 +130,7 @@ export class UserService {
       const uploadBlobResponse = await blockBlobClient.upload(file.buffer, file.size);
       console.log('Upload Status:', uploadBlobResponse._response.status);
 
-      blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer/${blobName}`;
+      blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer2/${blobName}`;
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);

@@ -16,6 +16,7 @@ export class LocationService {
         state: createLocationDto.state,
       },
       select:{
+        id: true,
         address: true,
         city: true,
         number: true, 

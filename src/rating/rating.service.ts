@@ -113,7 +113,8 @@ export class RatingService {
         include: {
             restaurant: {
                 select: {
-                    name: true
+                    name: true,
+                    url_img: true
                 }
             },
             user: {

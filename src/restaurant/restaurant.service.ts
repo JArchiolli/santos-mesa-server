@@ -39,8 +39,8 @@ export class RestaurantService {
     if (!connectionString) throw Error('Azure Storage connection string not found');
 
     const BlobService = BlobServiceClient.fromConnectionString(connectionString);
-    const containerClient = BlobService.getContainerClient("santosmesacontainer");
-    containerClient.setAccessPolicy('blob');
+    const containerClient = BlobService.getContainerClient("santosmesacontainer2");
+    // containerClient.setAccessPolicy('blob');
 
     try {
       await containerClient.createIfNotExists();
@@ -55,7 +55,7 @@ export class RestaurantService {
       const uploadBlobResponse = await blockBlobClient.upload(file.buffer, file.size);
       console.log('Upload Status:', uploadBlobResponse._response.status);
 
-      const blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer/${blobName}`;
+      const blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer2/${blobName}`;
 
     return this.prisma.restaurant.create({
       data: {
