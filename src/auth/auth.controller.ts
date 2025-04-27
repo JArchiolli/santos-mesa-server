@@ -49,13 +49,7 @@ export class AuthController {
   
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    const user = await this.userService.findOne(+id); 
-
-    if (user?.role !== 'ADM') {
-      throw new UnauthorizedException('Apenas adms podem acessar essa rota');
-    }
-
-    return this.userService.findAll(); 
+    return  await this.userService.findOne(+id); 
   }
 
   @Delete('delete/:userId')

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, StreamableFile, Query, UsePipes, ValidationPipe, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, StreamableFile, Query, UsePipes, ValidationPipe, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
@@ -25,9 +25,7 @@ export class RestaurantController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async findRestaurantsByCategories(@Query() query: getByCategoriesDto) {
     return this.restaurantService.findAll(
-      query,
-      query.minRating,
-      query.maxRating
+      query
     );
   }
 
@@ -64,5 +62,26 @@ export class RestaurantController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.restaurantService.remove(+id);
+  }
+
+  @Get('highlights/weekly/:userId')
+  async getUserWeeklyHighlights(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('minRating', new DefaultValuePipe(3), ParseIntPipe) minRating?: number
+  ) {
+    return this.restaurantService.findUserWeeklyHighlights(userId, minRating);
+  }
+
+  @Get('highlights/system')
+  findSystemHighlights() {
+    return this.restaurantService.findSystemHighlights();
+  }
+
+  @Get('recommendations/:userId')
+  async getRecommendations(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('minRating', new DefaultValuePipe(3), ParseIntPipe) minRating?: number
+  ) {
+    return this.restaurantService.findRecommendedRestaurants(userId, minRating);
   }
 }

@@ -16,7 +16,18 @@ export class UserService {
   }
 
   async findOne(id: number) {
-    return this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        profilePicture: true,
+        userName: true,
+        exibitionName: true
+      }
+    });
+    return user;
   }
 
   async remove(id: number) {
