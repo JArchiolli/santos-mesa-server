@@ -13,14 +13,14 @@ import { getByCategoriesDto } from './dto/filter-restaurants.dto';
 @Injectable()
 export class RestaurantService {
 
-  
+
   private calculateAverageRatings(restaurants) {
     return restaurants.map(({ rating, ...rest }) => {
       const averageRating =
         rating.length > 0
           ? (rating.reduce((acc, r) => acc + r.value, 0) / rating.length).toFixed(2)
           : 0;
-  
+
       return {
         ...rest,
         averageRating,
@@ -31,7 +31,7 @@ export class RestaurantService {
   constructor(private prisma: PrismaService) { }
 
   async create(createRestaurantDto: CreateRestaurantDto, file) {
-  
+
     const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
     if (!accountName) throw Error('Azure Storage accountName not found');
 
@@ -49,13 +49,13 @@ export class RestaurantService {
     }
 
 
-      const blobName = 'photo' + v1() + '.png';
-      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+    const blobName = 'photo' + v1() + '.png';
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-      const uploadBlobResponse = await blockBlobClient.upload(file.buffer, file.size);
-      console.log('Upload Status:', uploadBlobResponse._response.status);
+    const uploadBlobResponse = await blockBlobClient.upload(file.buffer, file.size);
+    console.log('Upload Status:', uploadBlobResponse._response.status);
 
-      const blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer2/${blobName}`;
+    const blobUrl = `https://${accountName}.blob.core.windows.net/santosmesacontainer2/${blobName}`;
 
     return this.prisma.restaurant.create({
       data: {
@@ -94,10 +94,10 @@ export class RestaurantService {
           rating: true,
         },
       });
-  
+
       return this.calculateAverageRatings(restaurants);
     }
-  
+
     const restaurants = await this.prisma.restaurant.findMany({
       where: {
         categoryId: {
@@ -110,11 +110,13 @@ export class RestaurantService {
         rating: true,
       },
     });
-  
+
     return this.calculateAverageRatings(restaurants);
   }
-  
   async findAll(queryParams: getByCategoriesDto) {
+    // Log para debug
+    console.log('Service received ratings:', queryParams.ratings);
+    
     const categoryIds = queryParams.categoryId
       ? Array.isArray(queryParams.categoryId)
         ? queryParams.categoryId
@@ -136,12 +138,24 @@ export class RestaurantService {
       },
     });
   
-    const restaurantsWithAvg = this.calculateAverageRatings(restaurants);
+    let restaurantsWithAvg = this.calculateAverageRatings(restaurants).map(restaurant => ({
+      ...restaurant,
+      averageRating: Number(restaurant.averageRating)
+    }));
   
-    if (queryParams.ratings && queryParams.ratings.length > 0) {
-      return restaurantsWithAvg.filter(restaurant => {
+    // Verificação mais robusta para os ratings
+    const ratingsFilter = Array.isArray(queryParams.ratings) 
+      ? queryParams.ratings.map(r => Number(r))
+      : queryParams.ratings 
+        ? [Number(queryParams.ratings)]
+        : [];
+  
+    console.log('Applied ratings filter:', ratingsFilter);
+  
+    if (ratingsFilter.length > 0) {
+      restaurantsWithAvg = restaurantsWithAvg.filter(restaurant => {
         const avg = restaurant.averageRating;
-        return queryParams.ratings?.some(rating => {
+        return ratingsFilter.some(rating => {
           switch(rating) {
             case 1: return avg >= 0.1 && avg <= 1.4;
             case 2: return avg >= 1.5 && avg <= 2.4;
@@ -199,30 +213,30 @@ export class RestaurantService {
 
 
 
-async findOne(id: number, filters?: { ratings?: number[] }) {
-  const ratingWhere: any = { restaurantId: id };
-  
-  if (filters?.ratings !== undefined) {
-      const numericRatings = Array.isArray(filters.ratings)
-          ? filters.ratings.map(r => Number(r))
-          : [Number(filters.ratings)];
-          
-      ratingWhere.value = { 
-          in: numericRatings.filter(r => !isNaN(r))
-      };
-  }
+  async findOne(id: number, filters?: { ratings?: number[] }) {
+    const ratingWhere: any = { restaurantId: id };
 
-  return this.prisma.restaurant.findFirst({
+    if (filters?.ratings !== undefined) {
+      const numericRatings = Array.isArray(filters.ratings)
+        ? filters.ratings.map(r => Number(r))
+        : [Number(filters.ratings)];
+
+      ratingWhere.value = {
+        in: numericRatings.filter(r => !isNaN(r))
+      };
+    }
+
+    return this.prisma.restaurant.findFirst({
       where: { id },
       include: {
-          category: true,
-          location: true,
-          rating: {
-              where: ratingWhere
-          },
+        category: true,
+        location: true,
+        rating: {
+          where: ratingWhere
+        },
       }
-  });
-}
+    });
+  }
 
 
   update(id: number, updateRestaurantDto: UpdateRestaurantDto) {
@@ -257,11 +271,11 @@ async findOne(id: number, filters?: { ratings?: number[] }) {
     const sunday = new Date(now);
     sunday.setDate(now.getDate() - now.getDay());
     sunday.setHours(0, 0, 0, 0);
-    
+
     const saturday = new Date(sunday);
     saturday.setDate(sunday.getDate() + 6);
     saturday.setHours(23, 59, 59, 999);
-  
+
     // 2. Buscar categorias que o usuário avaliou bem
     const userRatings = await this.prisma.rating.findMany({
       where: {
@@ -276,11 +290,11 @@ async findOne(id: number, filters?: { ratings?: number[] }) {
         }
       }
     });
-  
+
     const likedCategoryIds = userRatings
       .map(r => r.restaurant?.category?.id)
       .filter((id): id is number => id !== undefined && id !== null);
-  
+
     const restaurants = await this.prisma.restaurant.findMany({
       where: {
         ...(likedCategoryIds.length > 0 && {
@@ -302,7 +316,7 @@ async findOne(id: number, filters?: { ratings?: number[] }) {
         },
       },
     });
-  
+
     const restaurantsWithAvg = this.calculateAverageRatings(restaurants)
       .map((rest, index) => ({
         ...rest,
@@ -310,7 +324,7 @@ async findOne(id: number, filters?: { ratings?: number[] }) {
         ratingCount: restaurants[index].rating.length
       }))
       .filter(rest => rest.averageRating >= minRating);
-  
+
     return restaurantsWithAvg
       .sort((a, b) => {
         const avgDiff = b.averageRating - a.averageRating;
@@ -328,22 +342,22 @@ async findOne(id: number, filters?: { ratings?: number[] }) {
         rating: true,
       },
     });
-  
+
     const restaurantsWithAvg = this.calculateAverageRatings(restaurants);
-  
+
     const restaurantsWithCount = restaurantsWithAvg.map((restaurant, index) => ({
       ...restaurant,
       averageRating: parseFloat(restaurant.averageRating),
       ratingCount: restaurants[index].rating.length
     }));
-  
+
     const filteredRestaurants = restaurantsWithCount.filter(r => r.ratingCount > 0);
-  
+
     return filteredRestaurants
       .sort((a, b) => {
         const avgDiff = b.averageRating - a.averageRating;
         if (avgDiff !== 0) return avgDiff;
-        
+
         return b.ratingCount - a.ratingCount;
       })
       .slice(0, 9);
@@ -361,28 +375,28 @@ async findOne(id: number, filters?: { ratings?: number[] }) {
         }
       }
     });
-  
+
     const alreadyRatedRestaurantIds = allUserRatings
       .map(r => r.restaurantId)
       .filter((id): id is number => id !== undefined);
-  
+
     const likedCategoryIds = allUserRatings
       .filter(rating => rating.value >= minRating)
       .map(rating => rating.restaurant?.category?.id)
       .filter((id): id is number => id !== undefined && id !== null);
-  
+
     if (likedCategoryIds.length === 0) {
       const systemHighlights = await this.findSystemHighlights();
       return systemHighlights
         .filter(rest => rest.averageRating >= minRating)
         .slice(0, 9);
     }
-  
+
     const recommended = await this.prisma.restaurant.findMany({
       where: {
         categoryId: { in: likedCategoryIds },
         id: { notIn: alreadyRatedRestaurantIds },
-        rating: { some: {} } 
+        rating: { some: {} }
       },
       include: {
         category: true,
@@ -390,7 +404,7 @@ async findOne(id: number, filters?: { ratings?: number[] }) {
         rating: true
       }
     });
-  
+
     const processedRecommendations = this.calculateAverageRatings(recommended)
       .map(rest => ({
         ...rest,
@@ -405,14 +419,14 @@ async findOne(id: number, filters?: { ratings?: number[] }) {
           a.id - b.id
         );
       });
-  
+
     if (processedRecommendations.length === 0) {
       const systemHighlights = await this.findSystemHighlights();
       return systemHighlights
         .filter(rest => rest.averageRating >= minRating)
         .slice(0, 9);
     }
-  
+
     return processedRecommendations.slice(0, 5);
   }
 }
