@@ -6,19 +6,6 @@ datasource db {
   provider = "sqlserver"
   url      = env("DATABASE_URL")
 }
-
-model Restaurant {
-  id         Int       @id @default(autoincrement())
-  name       String
-  url_img    String
-  aboutUs    String
-  categoryId Int?
-  category   Category? @relation(fields: [categoryId], references: [id])
-  locationId Int?
-  location   Location? @relation(fields: [locationId], references: [id])
-  rating     Rating[]
-}
-
 model Category {
   id         Int          @id @default(autoincrement())
   name       String
@@ -34,16 +21,6 @@ model Location {
   restaurant Restaurant[]
 }
 
-model User {
-  id             Int      @id @default(autoincrement())
-  email          String   @unique
-  password       String
-  role           String
-  profilePicture String?
-  rating         Rating[]
-  userName       String?
-  exibitionName  String?
-}
 
 model Rating {
   id           Int         @id @default(autoincrement())
@@ -54,4 +31,40 @@ model Rating {
   userId       Int?
   user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade) 
   createdAt    DateTime    @default(now())
+}
+
+model User {
+  id             Int         @id @default(autoincrement())
+  email          String      @unique
+  password       String
+  role           String
+  profilePicture String?
+  rating         Rating[]
+  userName       String?
+  exibitionName  String?
+  favorites      Favorite[]  @relation("userFavorites")
+}
+
+model Restaurant {
+  id         Int        @id @default(autoincrement())
+  name       String
+  url_img    String
+  aboutUs    String
+  categoryId Int?
+  category   Category?  @relation(fields: [categoryId], references: [id])
+  locationId Int?
+  location   Location?  @relation(fields: [locationId], references: [id])
+  rating     Rating[]
+  favorites  Favorite[] @relation("restaurantFavorites")
+}
+
+model Favorite {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id], name: "userFavorites")
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], name: "restaurantFavorites")
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, restaurantId])
 }

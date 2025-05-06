@@ -7,6 +7,7 @@ import { CategoryModule } from './category/category.module';
 import { LocationModule } from './location/location.module';
 import { JwtModule } from '@nestjs/jwt';
 import { RatingModule } from './rating/rating.module';
+import { FavoritesModule } from './favorites/favorites.module';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { RatingModule } from './rating/rating.module';
     CategoryModule,
     LocationModule, 
     CategoryModule,
-    RatingModule
+    RatingModule,
+    FavoritesModule
   ],
 })
 export class AppModule { }

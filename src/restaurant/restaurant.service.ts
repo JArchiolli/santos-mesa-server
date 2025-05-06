@@ -266,7 +266,6 @@ export class RestaurantService {
   }
 
   async findUserWeeklyHighlights(userId: number, minRating: number = 3) {
-    // 1. Determinar período da semana (domingo a sábado)
     const now = new Date();
     const sunday = new Date(now);
     sunday.setDate(now.getDate() - now.getDay());
@@ -276,7 +275,6 @@ export class RestaurantService {
     saturday.setDate(sunday.getDate() + 6);
     saturday.setHours(23, 59, 59, 999);
 
-    // 2. Buscar categorias que o usuário avaliou bem
     const userRatings = await this.prisma.rating.findMany({
       where: {
         userId,
