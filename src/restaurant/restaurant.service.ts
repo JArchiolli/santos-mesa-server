@@ -113,15 +113,30 @@ export class RestaurantService {
 
     return this.calculateAverageRatings(restaurants);
   }
-  async findAll(queryParams: getByCategoriesDto) {
-    // Log para debug
-    console.log('Service received ratings:', queryParams.ratings);
+  
+  async findAll(
+    queryParams: getByCategoriesDto,
+    page: number = 1,
+    limit: number = 10
+  ) {
     
     const categoryIds = queryParams.categoryId
       ? Array.isArray(queryParams.categoryId)
         ? queryParams.categoryId
         : [queryParams.categoryId]
       : [];
+  
+    const skip = (page - 1) * limit;
+    
+    const totalCount = await this.prisma.restaurant.count({
+      where: {
+        ...(categoryIds.length > 0 && {
+          categoryId: {
+            in: categoryIds,
+          },
+        }),
+      },
+    });
   
     const restaurants = await this.prisma.restaurant.findMany({
       where: {
@@ -136,6 +151,8 @@ export class RestaurantService {
         location: true,
         rating: true,
       },
+      skip,
+      take: limit, 
     });
   
     let restaurantsWithAvg = this.calculateAverageRatings(restaurants).map(restaurant => ({
@@ -143,7 +160,6 @@ export class RestaurantService {
       averageRating: Number(restaurant.averageRating)
     }));
   
-    // Verificação mais robusta para os ratings
     const ratingsFilter = Array.isArray(queryParams.ratings) 
       ? queryParams.ratings.map(r => Number(r))
       : queryParams.ratings 
@@ -168,7 +184,19 @@ export class RestaurantService {
       });
     }
   
-    return restaurantsWithAvg;
+    const totalPages = Math.ceil(totalCount / limit);
+  
+    return {
+      data: restaurantsWithAvg,
+      pagination: {
+        total: totalCount,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
   }
   async findAverageRatingsByRestaurants() {
     const restaurants = await this.prisma.restaurant.findMany({
@@ -361,6 +389,58 @@ export class RestaurantService {
       .slice(0, 9);
   }
 
+  async findWeeklyTopRated() {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  
+    const restaurants = await this.prisma.restaurant.findMany({
+      include: {
+        category: true,
+        location: true,
+        rating: {
+          where: {
+            createdAt: {
+              gte: oneWeekAgo
+            }
+          }
+        },
+      },
+      where: {
+        rating: {
+          some: {
+            createdAt: {
+              gte: oneWeekAgo
+            }
+          }
+        }
+      }
+    });
+  
+    const restaurantsWithAvg = this.calculateAverageRatings(restaurants);
+  
+    const restaurantsWithCount = restaurantsWithAvg.map((restaurant, index) => ({
+      ...restaurant,
+      averageRating: parseFloat(restaurant.averageRating),
+      ratingCount: restaurants[index].rating.length,
+      latestRating: restaurants[index].rating.length > 0 
+        ? new Date(Math.max(...restaurants[index].rating.map(r => new Date(r.createdAt).getTime())))
+        : null
+    }));
+  
+    const filteredRestaurants = restaurantsWithCount.filter(r => r.ratingCount > 0);
+  
+    return filteredRestaurants
+      .sort((a, b) => {
+        const avgDiff = b.averageRating - a.averageRating;
+        if (avgDiff !== 0) return avgDiff;
+  
+        const countDiff = b.ratingCount - a.ratingCount;
+        if (countDiff !== 0) return countDiff;
+  
+        return b.latestRating - a.latestRating;
+      })
+      .slice(0, 5);
+  }
 
   async findRecommendedRestaurants(userId: number, minRating: number = 3) {
     const allUserRatings = await this.prisma.rating.findMany({
@@ -426,5 +506,26 @@ export class RestaurantService {
     }
 
     return processedRecommendations.slice(0, 5);
+  }
+
+  async findByName(name: string) {
+    const restaurants = await this.prisma.restaurant.findMany({
+      where: {
+        name: {
+          contains: name,
+        }
+      },
+      include: {
+        category: true,
+        location: true,
+        rating: true,
+      },
+    });
+  
+    const filteredRestaurants = restaurants.filter(restaurant => 
+      restaurant.name.toLowerCase().includes(name.toLowerCase())
+    );
+  
+    return this.calculateAverageRatings(filteredRestaurants);
   }
 }

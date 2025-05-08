@@ -23,13 +23,61 @@ export class RatingService {
           comments: comments
         }
       });
+      await this.checkAndAssignBadges(userId);
 
       return rating;
     } catch (error) {
       throw new Error(`Failed to create rating: ${error}`);
     }
   }
+ 
+  private async checkAndAssignBadges(userId: number) {
+    const ratingCount = await this.prisma.rating.count({
+      where: { userId }
+    });
 
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { badges: true }
+    });
+
+    if (!user) return;
+
+    const currentBadges = user.badges.map(b => b.level);
+
+    if (ratingCount >= 3 && !currentBadges.includes(1)) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          badges: {
+            connect: { name: "Bronze" }
+          }
+        }
+      });
+    }
+
+    if (ratingCount >= 9 && !currentBadges.includes(2)) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          badges: {
+            connect: { name: "Prata" }
+          }
+        }
+      });
+    }
+
+    if (ratingCount >= 12 && !currentBadges.includes(3)) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          badges: {
+            connect: { name: "Ouro" }
+          }
+        }
+      });
+    }
+  }
   async findAll() {
     return this.prisma.rating.findMany();
   }
@@ -99,37 +147,37 @@ export class RatingService {
 
   async findAllByUserId(userId: number, filters?: { ratings?: number[] }) {
     const where: any = { userId };
-    
+
     if (filters?.ratings !== undefined) {
-        where.value = { 
-            in: Array.isArray(filters.ratings) 
-                ? filters.ratings.map(r => Number(r)) 
-                : [Number(filters.ratings)]
-        };
+      where.value = {
+        in: Array.isArray(filters.ratings)
+          ? filters.ratings.map(r => Number(r))
+          : [Number(filters.ratings)]
+      };
     }
 
     const ratings = await this.prisma.rating.findMany({
-        where,
-        include: {
-            restaurant: {
-                select: {
-                    name: true,
-                    url_img: true
-                }
-            },
-            user: {
-                select: {
-                    userName: true
-                }
-            }
+      where,
+      include: {
+        restaurant: {
+          select: {
+            name: true,
+            url_img: true
+          }
+        },
+        user: {
+          select: {
+            userName: true
+          }
         }
+      }
     });
 
     if (!ratings || ratings.length === 0) {
-        throw new NotFoundException(`No ratings found for user ${userId} with the specified filters`);
+      throw new NotFoundException(`No ratings found for user ${userId} with the specified filters`);
     }
     return ratings;
-}
+  }
 
 
 

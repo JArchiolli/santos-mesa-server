@@ -23,10 +23,12 @@ export class RestaurantController {
 
   @Get()
   @UsePipes(new ValidationPipe({ transform: true }))
-  async findRestaurantsByCategories(@Query() query: getByCategoriesDto) {
-    return this.restaurantService.findAll(
-      query
-    );
+  async findRestaurantsByCategories(
+    @Query() query: getByCategoriesDto,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10
+  ) {
+    return this.restaurantService.findAll(query, page, limit);
   }
 
   @Get('by-categories')
@@ -75,6 +77,11 @@ export class RestaurantController {
   @Get('highlights/system')
   findSystemHighlights() {
     return this.restaurantService.findSystemHighlights();
+  }
+
+  @Get('highlights/weekly')
+  findWeeklyTopRated() {
+    return this.restaurantService.findWeeklyTopRated();
   }
 
   @Get('recommendations/:userId')

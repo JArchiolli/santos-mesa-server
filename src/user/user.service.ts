@@ -24,7 +24,9 @@ export class UserService {
         role: true,
         profilePicture: true,
         userName: true,
-        exibitionName: true
+        exibitionName: true,
+        favorites: true,
+        badges:true
       }
     });
     return user;

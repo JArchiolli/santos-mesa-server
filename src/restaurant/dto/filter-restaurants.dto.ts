@@ -1,18 +1,24 @@
 import { Transform, Type } from "class-transformer";
 import { IsArray, IsNumber, IsOptional } from "class-validator";
 
-export class getByCategoriesDto {
-    @IsOptional()
-    @IsNumber({}, { each: true })
-    @Type(() => Number)
-    categoryId?: number | number[];
-  
-    @IsOptional()
-    @IsNumber({}, { each: true })
-    @Type(() => Number)
-    ratings?: number[]; 
-  }
 
+export class getByCategoriesDto {
+  @IsOptional()
+  @IsArray()
+  categoryId?: number[];
+
+  @IsOptional()
+  @IsArray()
+  ratings?: number[];
+
+  @IsOptional()
+  @IsNumber()
+  page?: number = 1; // Valor padrão 1
+
+  @IsOptional()
+  @IsNumber()
+  limit?: number = 10; // Valor padrão 10
+}
 export class FilterRestaurantRatingsDto {
     @IsOptional()
     @IsArray()

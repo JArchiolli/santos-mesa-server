@@ -33,6 +33,14 @@ model Rating {
   createdAt    DateTime    @default(now())
 }
 
+model Badge {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  level  Int     @unique
+  image  String?
+  users  User[]  @relation("UserBadges")
+}
+
 model User {
   id             Int         @id @default(autoincrement())
   email          String      @unique
@@ -43,6 +51,7 @@ model User {
   userName       String?
   exibitionName  String?
   favorites      Favorite[]  @relation("userFavorites")
+  badges         Badge[]     @relation("UserBadges")
 }
 
 model Restaurant {
