@@ -84,120 +84,228 @@ export class RestaurantService {
       }
     })
   }
-
-  async findRestaurantsByCategories(categoryIds: getByCategories) {
-    if (!categoryIds || categoryIds.categoryId.length === 0) {
-      const restaurants = await this.prisma.restaurant.findMany({
-        include: {
-          category: true,
-          location: true,
-          rating: true,
-        },
-      });
-
-      return this.calculateAverageRatings(restaurants);
-    }
-
-    const restaurants = await this.prisma.restaurant.findMany({
-      where: {
-        categoryId: {
-          in: categoryIds.categoryId,
-        },
-      },
-      include: {
-        category: true,
-        location: true,
-        rating: true,
-      },
-    });
-
-    return this.calculateAverageRatings(restaurants);
-  }
-  
   async findAll(
-    queryParams: getByCategoriesDto,
-    page: number = 1,
-    limit: number = 10
-  ) {
-    
-    const categoryIds = queryParams.categoryId
-      ? Array.isArray(queryParams.categoryId)
-        ? queryParams.categoryId
-        : [queryParams.categoryId]
-      : [];
-  
-    const skip = (page - 1) * limit;
-    
-    const totalCount = await this.prisma.restaurant.count({
-      where: {
-        ...(categoryIds.length > 0 && {
-          categoryId: {
-            in: categoryIds,
-          },
-        }),
-      },
-    });
-  
-    const restaurants = await this.prisma.restaurant.findMany({
-      where: {
-        ...(categoryIds.length > 0 && {
-          categoryId: {
-            in: categoryIds,
-          },
-        }),
-      },
-      include: {
-        category: true,
-        location: true,
-        rating: true,
-      },
-      skip,
-      take: limit, 
-    });
-  
-    let restaurantsWithAvg = this.calculateAverageRatings(restaurants).map(restaurant => ({
-      ...restaurant,
-      averageRating: Number(restaurant.averageRating)
-    }));
-  
-    const ratingsFilter = Array.isArray(queryParams.ratings) 
-      ? queryParams.ratings.map(r => Number(r))
-      : queryParams.ratings 
-        ? [Number(queryParams.ratings)]
-        : [];
-  
-    console.log('Applied ratings filter:', ratingsFilter);
-  
-    if (ratingsFilter.length > 0) {
-      restaurantsWithAvg = restaurantsWithAvg.filter(restaurant => {
-        const avg = restaurant.averageRating;
-        return ratingsFilter.some(rating => {
-          switch(rating) {
-            case 1: return avg >= 0.1 && avg <= 1.4;
-            case 2: return avg >= 1.5 && avg <= 2.4;
-            case 3: return avg >= 2.5 && avg <= 3.4;
-            case 4: return avg >= 3.5 && avg <= 4.4;
-            case 5: return avg >= 4.5 && avg <= 5;
-            default: return false;
-          }
-        });
-      });
-    }
-  
-    const totalPages = Math.ceil(totalCount / limit);
-  
-    return {
-      data: restaurantsWithAvg,
-      pagination: {
-        total: totalCount,
-        totalPages,
-        currentPage: page,
-        perPage: limit,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
+  queryParams: getByCategoriesDto,
+  page: number = 1,
+  limit: number = 10
+) {
+  const categoryIdsRaw = queryParams.categoryId;
+  const ratingsRaw = queryParams.ratings;
+
+  const categoryIds = categoryIdsRaw
+    ? Array.isArray(categoryIdsRaw)
+      ? categoryIdsRaw.map((id) => Number(id)).filter((n) => !isNaN(n))
+      : [Number(categoryIdsRaw)].filter((n) => !isNaN(n))
+    : [];
+
+  const ratingsFilter = ratingsRaw
+    ? Array.isArray(ratingsRaw)
+      ? ratingsRaw.map((r) => Number(r)).filter((n) => !isNaN(n))
+      : [Number(ratingsRaw)].filter((n) => !isNaN(n))
+    : [];
+
+  const search = queryParams.search?.trim().toLowerCase().replace(/^'+|'+$/g, '');
+  const skip = (page - 1) * limit;
+
+  const whereConditions: any = {};
+
+  // Só aplica o filtro se o array tiver valores válidos
+  if (categoryIds.length > 0) {
+    whereConditions.categoryId = {
+      in: categoryIds,
     };
   }
+
+  const rawRestaurants = await this.prisma.restaurant.findMany({
+    where: whereConditions,
+    include: {
+      category: true,
+      location: true,
+      rating: true,
+    },
+  });
+
+  console.log('Search:', search);
+  rawRestaurants.forEach(r => {
+    console.log('Restaurante:', JSON.stringify(r.name), '=>', r.name.trim().toLowerCase());
+  });
+
+  let filteredRestaurants = rawRestaurants;
+
+  if (search && search !== '') {
+    filteredRestaurants = rawRestaurants.filter((restaurant) => {
+      const name = restaurant.name.trim().toLowerCase();
+      return name.startsWith(search) || name.includes(search);
+    });
+  }
+
+  console.log('Total após filtro manual:', filteredRestaurants.length);
+
+  const totalCount = filteredRestaurants.length;
+  const paginatedRestaurants = filteredRestaurants.slice(skip, skip + limit);
+
+  let restaurantsWithAvg = this.calculateAverageRatings(paginatedRestaurants).map(
+    (restaurant) => ({
+      ...restaurant,
+      averageRating: Number(restaurant.averageRating),
+    })
+  );
+
+  // Só aplica o filtro se ratings tiver valores
+  if (ratingsFilter.length > 0) {
+    restaurantsWithAvg = restaurantsWithAvg.filter((restaurant) => {
+      const avg = restaurant.averageRating;
+      return ratingsFilter.some((rating) => {
+        switch (rating) {
+          case 1:
+            return avg >= 0.1 && avg <= 1.4;
+          case 2:
+            return avg >= 1.5 && avg <= 2.4;
+          case 3:
+            return avg >= 2.5 && avg <= 3.4;
+          case 4:
+            return avg >= 3.5 && avg <= 4.4;
+          case 5:
+            return avg >= 4.5 && avg <= 5;
+          default:
+            return false;
+        }
+      });
+    });
+  }
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: restaurantsWithAvg,
+    pagination: {
+      total: totalCount,
+      totalPages,
+      currentPage: page,
+      perPage: limit,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  };
+}
+
+
+
+
+
+  // async findRestaurantsByCategories(categoryIds: getByCategories) {
+  //   if (!categoryIds || categoryIds.categoryId.length === 0) {
+  //     const restaurants = await this.prisma.restaurant.findMany({
+  //       include: {
+  //         category: true,
+  //         location: true,
+  //         rating: true,
+  //       },
+  //     });
+
+  //     return this.calculateAverageRatings(restaurants);
+  //   }
+
+  //   const restaurants = await this.prisma.restaurant.findMany({
+  //     where: {
+  //       categoryId: {
+  //         in: categoryIds.categoryId,
+  //       },
+  //     },
+  //     include: {
+  //       category: true,
+  //       location: true,
+  //       rating: true,
+  //     },
+  //   });
+
+  //   return this.calculateAverageRatings(restaurants);
+  // }
+  
+  // async findAll(
+  //   queryParams: getByCategoriesDto,
+  //   page: number = 1,
+  //   limit: number = 10
+  // ) {
+    
+  //   const categoryIds = queryParams.categoryId
+  //     ? Array.isArray(queryParams.categoryId)
+  //       ? queryParams.categoryId
+  //       : [queryParams.categoryId]
+  //     : [];
+  
+  //   const skip = (page - 1) * limit;
+    
+  //   const totalCount = await this.prisma.restaurant.count({
+  //     where: {
+  //       ...(categoryIds.length > 0 && {
+  //         categoryId: {
+  //           in: categoryIds,
+  //         },
+  //       }),
+  //     },
+  //   });
+  
+  //   const restaurants = await this.prisma.restaurant.findMany({
+  //     where: {
+  //       ...(categoryIds.length > 0 && {
+  //         categoryId: {
+  //           in: categoryIds,
+  //         },
+  //       }),
+  //     },
+  //     include: {
+  //       category: true,
+  //       location: true,
+  //       rating: true,
+  //     },
+  //     skip,
+  //     take: limit, 
+  //   });
+  
+  //   let restaurantsWithAvg = this.calculateAverageRatings(restaurants).map(restaurant => ({
+  //     ...restaurant,
+  //     averageRating: Number(restaurant.averageRating)
+  //   }));
+  
+  //   const ratingsFilter = Array.isArray(queryParams.ratings) 
+  //     ? queryParams.ratings.map(r => Number(r))
+  //     : queryParams.ratings 
+  //       ? [Number(queryParams.ratings)]
+  //       : [];
+  
+  //   console.log('Applied ratings filter:', ratingsFilter);
+  
+  //   if (ratingsFilter.length > 0) {
+  //     restaurantsWithAvg = restaurantsWithAvg.filter(restaurant => {
+  //       const avg = restaurant.averageRating;
+  //       return ratingsFilter.some(rating => {
+  //         switch(rating) {
+  //           case 1: return avg >= 0.1 && avg <= 1.4;
+  //           case 2: return avg >= 1.5 && avg <= 2.4;
+  //           case 3: return avg >= 2.5 && avg <= 3.4;
+  //           case 4: return avg >= 3.5 && avg <= 4.4;
+  //           case 5: return avg >= 4.5 && avg <= 5;
+  //           default: return false;
+  //         }
+  //       });
+  //     });
+  //   }
+  
+  //   const totalPages = Math.ceil(totalCount / limit);
+  
+  //   return {
+  //     data: restaurantsWithAvg,
+  //     pagination: {
+  //       total: totalCount,
+  //       totalPages,
+  //       currentPage: page,
+  //       perPage: limit,
+  //       hasNextPage: page < totalPages,
+  //       hasPreviousPage: page > 1,
+  //     },
+  //   };
+  // }
   async findAverageRatingsByRestaurants() {
     const restaurants = await this.prisma.restaurant.findMany({
       include: {
@@ -271,9 +379,6 @@ export class RestaurantService {
     return this.prisma.restaurant.update({
       where: { id },
       data: {
-        name: updateRestaurantDto.name,
-        url_img: updateRestaurantDto.url_img,
-        aboutUs: updateRestaurantDto.aboutUs,
         category: {
           connect: {
             id: updateRestaurantDto.categoryId

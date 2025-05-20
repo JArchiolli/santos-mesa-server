@@ -31,15 +31,15 @@ export class RestaurantController {
     return this.restaurantService.findAll(query, page, limit);
   }
 
-  @Get('by-categories')
-  async getByCategories(@Query() param: getByCategories) {
+  // @Get('by-categories')
+  // async getByCategories(@Query() param: getByCategories) {
 
-    return this.restaurantService.findRestaurantsByCategories(param);
-  }
-  @Get('/average')
-  findAverageRatingsByRestaurant() {
-    return this.restaurantService.findAverageRatingsByRestaurants();
-  }
+  //   return this.restaurantService.findRestaurantsByCategories(param);
+  // }
+  // @Get('/average')
+  // findAverageRatingsByRestaurant() {
+  //   return this.restaurantService.findAverageRatingsByRestaurants();
+  // }
 
 
   @Get('/average/:id')

@@ -26,12 +26,13 @@ model Rating {
   id           Int         @id @default(autoincrement())
   value        Int
   comments     String?
-  restaurantId Int?
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurantId Int
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   userId       Int?
   user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade) 
   createdAt    DateTime    @default(now())
 }
+
 
 model Badge {
   id     Int     @id @default(autoincrement())
@@ -72,7 +73,7 @@ model Favorite {
   userId       Int
   user         User       @relation(fields: [userId], references: [id], name: "userFavorites")
   restaurantId Int
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], name: "restaurantFavorites")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], name: "restaurantFavorites", onDelete: Cascade)
   createdAt    DateTime   @default(now())
 
   @@unique([userId, restaurantId])

@@ -45,15 +45,16 @@ export class RatingController {
       });
   }
 
-  @Get('/restaurant/:id')
-  async findAllByRestaurantId(@Param('id') restaurantId: string) {
-    try {
-      return await this.ratingService.findAllByRestaurantId(parseInt(restaurantId));
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new NotFoundException(error);
-    }
+@Get('/restaurant/:id')
+async findAllByRestaurantId(@Param('id') restaurantId: string) {
+  try {
+    const ratings = await this.ratingService.findAllByRestaurantId(parseInt(restaurantId));
+    return ratings ?? [];
+  } catch (error) {
+    console.error(error);
+    return [];
   }
+}
+
+
 }

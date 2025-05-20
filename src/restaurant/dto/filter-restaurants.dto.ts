@@ -1,15 +1,21 @@
 import { Transform, Type } from "class-transformer";
-import { IsArray, IsNumber, IsOptional } from "class-validator";
+import { IsArray, IsNumber, IsOptional, IsString } from "class-validator";
 
 
 export class getByCategoriesDto {
   @IsOptional()
+  @Transform(({ value }) => Array.isArray(value) ? value : [value])
   @IsArray()
-  categoryId?: number[];
+  categoryId?: string[];
 
   @IsOptional()
+  @Transform(({ value }) => Array.isArray(value) ? value : [value])
   @IsArray()
-  ratings?: number[];
+  ratings?: string[];
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 
 
 }

@@ -26,7 +26,17 @@ export class UserService {
         userName: true,
         exibitionName: true,
         favorites: true,
-        badges:true
+        badges: {
+            orderBy: {
+              level: 'desc'
+            },
+            take: 1,
+            select: {
+              name: true,
+              level: true,
+              image: true
+            }
+          }
       }
     });
     return user;
